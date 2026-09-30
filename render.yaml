@@ -1,0 +1,33 @@
+# Molo Residence — Render blueprint.
+#
+# The dashboard is a Next.js STATIC EXPORT (frontend/next.config.ts sets
+# `output: 'export'`), so it deploys as a Render static site serving
+# `frontend/out` — NOT a web service. There is no Next server at runtime and
+# therefore no start command.
+#
+# No secrets belong here. All DB access lives in the Supabase edge function
+# `api` (backend/supabase/functions/api), which alone holds the service-role
+# key; the browser only ever gets the public anon key.
+#
+# The voice agent (backend/agent) is NOT deployed by this blueprint — it ships
+# as a container to LiveKit Cloud via backend/agent/Dockerfile.
+services:
+  - type: web
+    runtime: static
+    name: molo-dashboard
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: out
+    autoDeploy: true
+    # Only rebuild when the dashboard changes — agent and edge-function commits
+    # should not burn a frontend deploy.
+    buildFilter:
+      paths:
+        - frontend/**
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false

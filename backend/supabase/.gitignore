@@ -1,0 +1,3 @@
+# Supabase CLI scratch state — machine-local, not source
+.temp/
+.branches/

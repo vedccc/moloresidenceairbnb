@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Molo Voice Agent — Handover</title>
+<style>
+  :root{
+    --bg:#fff; --fg:#09090b; --muted:#71717a; --border:#e4e4e7; --subtle:#fafafa;
+    --amber-bg:#fffbeb; --amber-br:#fcd34d; --amber-fg:#78350f;
+    --green-bg:#f0fdf4; --green-br:#86efac; --green-fg:#14532d;
+    --blue-bg:#eff6ff;  --blue-br:#93c5fd;  --blue-fg:#1e3a8a;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#09090b; --fg:#fafafa; --muted:#a1a1aa; --border:#27272a; --subtle:#18181b;
+      --amber-bg:#2a2008; --amber-br:#a16207; --amber-fg:#fde68a;
+      --green-bg:#0c2115; --green-br:#15803d; --green-fg:#bbf7d0;
+      --blue-bg:#0f1c33;  --blue-br:#1d4ed8;  --blue-fg:#bfdbfe;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);
+       font:15px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+       -webkit-font-smoothing:antialiased}
+  .wrap{max-width:820px;margin:0 auto;padding:56px 24px 96px}
+  header{border-bottom:1px solid var(--border);padding-bottom:22px;margin-bottom:36px}
+  h1{font-size:25px;font-weight:600;letter-spacing:-.02em;margin:0 0 5px}
+  .sub{color:var(--muted);font-size:14px;margin:0}
+  h2{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+     color:var(--muted);margin:54px 0 18px}
+  p{margin:0 0 12px}
+  b{font-weight:600}
+
+  /* ── questions ── */
+  .ask{border:1px solid var(--border);border-radius:10px;overflow:hidden;margin:0 0 16px}
+  .ask-row{display:flex;gap:14px;padding:16px 20px;border-bottom:1px solid var(--border)}
+  .ask-row:last-child{border-bottom:none}
+  .ask-n{flex:none;width:22px;height:22px;border-radius:99px;background:var(--fg);color:var(--bg);
+         font:600 12px/22px ui-sans-serif,system-ui;text-align:center}
+  .ask-b{flex:1;min-width:0}
+  .ask-q{font-weight:600;margin:1px 0 3px}
+  .ask-d{color:var(--muted);font-size:13.5px}
+  .ask-l{margin:6px 0 8px;padding-left:18px}
+  .ask-l li{margin:2px 0;font-size:14px}
+
+  /* ── tree ── */
+  .tree{border:1px solid var(--border);border-radius:10px;background:var(--subtle);
+        padding:26px 24px;margin:0 0 14px}
+  .t-root{border:1px solid var(--border);background:var(--bg);border-radius:9px;
+          padding:13px 16px;text-align:center;font-weight:600;font-size:14.5px}
+  .t-kbs{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:9px}
+  .kb{border-radius:6px;padding:5px 11px;font-size:12.5px;font-weight:500;border:1px solid;
+      white-space:nowrap}
+  .kb-gen{background:var(--blue-bg);border-color:var(--blue-br);color:var(--blue-fg)}
+  .kb-room{background:var(--green-bg);border-color:var(--green-br);color:var(--green-fg)}
+  .t-split{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:0}
+  .t-stem{height:16px;border-left:1px solid var(--border);margin:0 auto;width:1px}
+  .t-bar{height:1px;background:var(--border);margin:0 25%}
+  .t-legs{display:grid;grid-template-columns:1fr 1fr}
+  .t-leg{height:16px;border-left:1px solid var(--border);width:1px;margin:0 auto}
+  .t-branch{border:1px solid var(--border);background:var(--bg);border-radius:9px;padding:14px 16px}
+  .t-when{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;
+          color:var(--muted);margin-bottom:6px}
+  .t-say{font-size:13.5px;margin-bottom:8px}
+  .t-arr{color:var(--muted);font-size:15px;line-height:1;margin:6px 0}
+  .t-ans{font-size:13.5px;color:var(--muted)}
+  .t-ans i{color:var(--fg);font-style:normal}
+  @media (max-width:620px){ .t-split{grid-template-columns:1fr} .t-bar{display:none} .t-legs{grid-template-columns:1fr} }
+
+  /* ── test flowcharts ── */
+  .fc{border:1px solid var(--border);border-radius:10px;overflow:hidden;margin:0 0 16px}
+  .fc-h{padding:12px 18px;background:var(--subtle);border-bottom:1px solid var(--border);
+        font-weight:600;font-size:14.5px}
+  .fc-b{padding:18px}
+  .n{border:1px solid var(--border);border-radius:8px;padding:11px 14px;font-size:14px}
+  .n.you{background:var(--bg)}
+  .n.ai{background:var(--subtle);color:var(--fg)}
+  .n .who{font:600 10px/1.6 ui-sans-serif,system-ui;letter-spacing:.07em;
+          text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+  .start{display:flex;align-items:center;gap:9px;border:1px dashed var(--border);
+         border-radius:8px;padding:10px 13px;font-size:13.5px;color:var(--muted);
+         background:var(--subtle)}
+  .start svg{flex:none;width:15px;height:15px;stroke:currentColor;fill:none;
+             stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .down{text-align:center;color:var(--muted);font-size:15px;line-height:1;padding:6px 0}
+  .pass{background:var(--green-bg);border:1px solid var(--green-br);color:var(--green-fg);
+        border-radius:8px;padding:11px 14px;font-size:13.5px;margin-top:4px}
+  .warn{background:var(--amber-bg);border:1px solid var(--amber-br);color:var(--amber-fg);
+        border-radius:8px;padding:11px 14px;font-size:13.5px;margin-top:8px}
+
+  .note{border-radius:10px;padding:16px 18px;margin:0 0 16px;border:1px solid}
+  .note :last-child{margin-bottom:0}
+  .amber{background:var(--amber-bg);border-color:var(--amber-br);color:var(--amber-fg)}
+  code{font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--subtle);
+       border:1px solid var(--border);border-radius:4px;padding:1px 5px}
+  .login{border:1px solid var(--border);border-radius:10px;overflow:hidden;margin:0 0 12px}
+  .lg-row{display:flex;border-bottom:1px solid var(--border)}
+  .lg-row:last-child{border-bottom:none}
+  .lg-k{flex:none;width:120px;padding:12px 16px;background:var(--subtle);
+        font:600 11px/1.6 ui-sans-serif,system-ui;letter-spacing:.06em;text-transform:uppercase;
+        color:var(--muted);border-right:1px solid var(--border)}
+  .lg-v{flex:1;padding:11px 16px;font:14px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;
+        word-break:break-all}
+  .small{font-size:13px} .muted{color:var(--muted)}
+  @media (max-width:600px){ .wrap{padding:32px 18px 64px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Molo Voice Agent — Handover</h1>
+  <p class="sub">Test phone: +48 732 128 903 · 15 August 2026</p>
+</header>
+
+<!-- ══════════ QUESTIONS ══════════ -->
+<h2>Needed from Piotr</h2>
+
+<div class="note amber">
+  <p><b>One note before the questions — about breakfast orders.</b></p>
+  <p>The knowledge base said that if a guest calls after 8pm, the AI should take their breakfast
+  order and let reception know. We've taken that line out, because the AI has no way to do it —
+  sending messages or emails to your staff isn't part of what was built, so “I'll pass it on to
+  reception” would have been a promise with nothing behind it.</p>
+  <p>What it <b>can</b> do is tell the guest anything that's in the knowledge base, and put them
+  through to a person. So for a late breakfast order it can already say <i>“you can order through
+  the SmartHotel app, or on the form at reception”</i> — or offer to transfer the call. If you'd
+  like it to say something specific in that situation, just add it to the knowledge base and it
+  will.</p>
+</div>
+
+<div class="ask">
+  <div class="ask-row">
+    <div class="ask-n">1</div>
+    <div class="ask-b">
+      <div class="ask-q">When can the AI transfer the call to a human?</div>
+      <ul class="ask-l">
+        <li>On what days?</li>
+        <li>At what times on those days?</li>
+      </ul>
+      <div class="ask-d">It's currently set to Monday–Friday, 8am–5pm, which was our best guess.
+      The knowledge base mentions reception being open <b>7:00 AM – 10:00 PM</b> (in the luggage
+      storage section), and public listings say 24 hours. We'd like the real answer.</div>
+    </div>
+  </div>
+  <div class="ask-row">
+    <div class="ask-n">2</div>
+    <div class="ask-b">
+      <div class="ask-q">Which number should the transfers go to?</div>
+      <div class="ask-d">Currently <b>+48 666 956 956</b>. The number published on the website is
+      <b>+48 58 355 11 00</b>.</div>
+    </div>
+  </div>
+  <div class="ask-row">
+    <div class="ask-n">3</div>
+    <div class="ask-b">
+      <div class="ask-q">What is the Wi-Fi for Riviera Apartments 105–401?</div>
+      <div class="ask-d">Six apartments have no Wi-Fi anywhere in the system, so the AI can't answer
+      the most common guest question. (Apartment 402 has its own and is already set up.)</div>
+    </div>
+  </div>
+  <div class="ask-row">
+    <div class="ask-n">4</div>
+    <div class="ask-b">
+      <div class="ask-q">How far is the Pułaskiego 21 car park?</div>
+      <div class="ask-d">It's written as 30 m, 150 m and 200 m in three different places. Which is
+      right?</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ HOW IT WORKS ══════════ -->
+<h2>How the AI uses knowledge bases</h2>
+
+<div class="tree">
+  <div class="t-root">
+    Call starts
+    <div class="t-kbs"><span class="kb kb-gen">General knowledge base</span></div>
+  </div>
+
+  <div class="t-stem"></div>
+  <div class="t-bar"></div>
+  <div class="t-legs"><div class="t-leg"></div><div class="t-leg"></div></div>
+
+  <div class="t-split">
+
+    <div class="t-branch">
+      <div class="t-when">General question</div>
+      <div class="t-say">“What is Sopot known for?”</div>
+      <div class="t-arr">↓</div>
+      <div class="t-ans">Answered straight away from the general knowledge base —
+      <i>“the long wooden pier, the beach, and the Forest Opera.”</i></div>
+    </div>
+
+    <div class="t-branch">
+      <div class="t-when">Question about their room</div>
+      <div class="t-say">“What's the wifi password?”</div>
+      <div class="t-arr">↓</div>
+      <div class="t-ans">The AI asks for their <b>room number and address</b>, because several
+      properties have a room 4.</div>
+    </div>
+
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr">
+    <div></div>
+    <div class="t-leg" style="height:18px"></div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+    <div></div>
+    <div class="t-root">
+      Guest identified
+      <div class="t-kbs">
+        <span class="kb kb-room">Their room's KB</span>
+        <span class="kb kb-gen">General KB</span>
+      </div>
+      <div class="t-ans" style="margin-top:9px;text-align:left">The AI now has <b>both</b>, so it
+      can answer their wifi <i>and</i> anything general for the rest of the call.</div>
+    </div>
+  </div>
+</div>
+
+<p class="small muted">The general knowledge base holds portfolio-wide things: all the addresses,
+room types, which sites you can book on, and information about Sopot. Each property's knowledge base
+holds its own wifi, door code, check-in time and parking. If the two ever disagree, the room's own
+details win.</p>
+
+<!-- ══════════ TESTING ══════════ -->
+<h2>How to test it</h2>
+
+<p>Call <b>+48 732 128 903</b>. It opens with:
+<i>“Hi, welcome to Molo Residence. My name is Tomasz, I'm an AI. This call is being transcribed for
+quality purposes. Are you an existing guest, or are you looking to book a stay?”</i></p>
+
+<div class="fc">
+  <div class="fc-h">Test 1 · Room wifi</div>
+  <div class="fc-b">
+    <div class="start"><svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.4-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/><line x1="2" y1="22" x2="22" y2="2"/></svg><span><b>Hang up first</b> — start each test with a fresh call</span></div>
+    <div class="down">↓</div>
+    <div class="n you"><div class="who">You say</div>“I'm a guest, what's the wifi password?”</div>
+    <div class="down">↓</div>
+    <div class="n ai"><div class="who">AI</div>Asks for your room number</div>
+    <div class="down">↓</div>
+    <div class="n you"><div class="who">You say</div>“Room 3”</div>
+    <div class="down">↓</div>
+    <div class="n ai"><div class="who">AI</div>Repeats it back, then asks <b>which address</b></div>
+    <div class="down">↓</div>
+    <div class="n you"><div class="who">You say</div>“Chopina 40/8”</div>
+    <div class="down">↓</div>
+    <div class="pass">✓ Network <b>Riviera Rooms</b>, password <b>Chopina40m8</b></div>
+  </div>
+</div>
+
+<div class="fc">
+  <div class="fc-h">Test 2 · Still knows the general info</div>
+  <div class="fc-b">
+    <div class="start"><svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.4-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/><line x1="2" y1="22" x2="22" y2="2"/></svg><span><b>Hang up first</b> — start each test with a fresh call</span></div>
+    <div class="down">↓</div>
+    <div class="n you"><div class="who">You say</div>“I'm a guest, what's the wifi password?”</div>
+    <div class="down">↓</div>
+    <div class="n ai"><div class="who">AI</div>Asks for your room number</div>
+    <div class="down">↓</div>
+    <div class="n you"><div class="who">You say</div>“Room 5”</div>
+    <div class="down">↓</div>
+    <div class="n ai"><div class="who">AI</div>Repeats it back, then asks <b>which address</b> —
+      room 5 exists at four properties</div>
+    <div class="down">↓</div>
+    <div class="n you"><div class="who">You say</div>“Pułaskiego 6a”</div>
+    <div class="down">↓</div>
+    <div class="n ai"><div class="who">AI</div><b>MoloResidence</b> / <b>molo1234</b></div>
+    <div class="down">↓</div>
+    <div class="n you"><div class="who">You say</div><b>Now ask something general:</b>
+      “And what is Sopot known for?”</div>
+    <div class="down">↓</div>
+    <div class="pass">✓ The wooden pier, the beach, the Forest Opera</div>
+  </div>
+</div>
+
+<div class="fc">
+  <div class="fc-h">Test 3 · Breakfast</div>
+  <div class="fc-b">
+    <div class="start"><svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.4-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/><line x1="2" y1="22" x2="22" y2="2"/></svg><span><b>Hang up first</b> — start each test with a fresh call</span></div>
+    <div class="down">↓</div>
+    <div class="n you"><div class="who">You say</div>“I'm a guest — what's for breakfast?”</div>
+    <div class="down">↓</div>
+    <div class="n ai"><div class="who">AI</div>Asks for your room number, then which address, and
+      reads each back to check — breakfast differs by property</div>
+    <div class="down">↓</div>
+    <div class="n you"><div class="who">You say</div>“Room 5”, then “Pułaskiego 6a”, confirming each</div>
+    <div class="down">↓</div>
+    <div class="pass">✓ Served 7:00–11:00, <b>60 PLN</b> per person, ordered a day ahead by 8pm,
+      and it can name the sets — Fitness, Energy, Sweet, Fluffy Pancakes</div>
+    <div class="down">↓</div>
+    <div class="n you"><div class="who">You say</div>“How do I order?”</div>
+    <div class="down">↓</div>
+    <div class="pass">✓ Through the SmartHotel app link (breakfasts.moloresidence.pl), or the paper
+      form at reception</div>
+  </div>
+</div>
+
+<div class="fc">
+  <div class="fc-h">Test 4 · Booking link by SMS</div>
+  <div class="fc-b">
+    <div class="start"><svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.4-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/><line x1="2" y1="22" x2="22" y2="2"/></svg><span><b>Hang up first</b> — start each test with a fresh call</span></div>
+    <div class="down">↓</div>
+    <div class="n you"><div class="who">You say</div>“I'd like to book a stay”</div>
+    <div class="down">↓</div>
+    <div class="n ai"><div class="who">AI</div>Asks check-in date</div>
+    <div class="down">↓</div>
+    <div class="n ai"><div class="who">AI</div>Asks check-out date</div>
+    <div class="down">↓</div>
+    <div class="n ai"><div class="who">AI</div>Asks how many adults, then how many children</div>
+    <div class="down">↓</div>
+    <div class="n ai"><div class="who">AI</div>Reads the whole booking back and waits for a yes</div>
+    <div class="down">↓</div>
+    <div class="n you"><div class="who">You say</div>“Yes, that's right”</div>
+    <div class="down">↓</div>
+    <div class="n ai"><div class="who">AI</div><b>Checks availability</b>, then says how many options
+      there are and offers to send a booking link</div>
+    <div class="down">↓</div>
+    <div class="n you"><div class="who">You say</div>“Yes please”</div>
+    <div class="down">↓</div>
+    <div class="pass">✓ Booking link arrives by SMS on the number you called from</div>
+  </div>
+</div>
+
+<div class="fc">
+  <div class="fc-h">Test 5 · Troubleshooting, then a maintenance ticket</div>
+  <div class="fc-b">
+    <div class="start"><svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.4-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/><line x1="2" y1="22" x2="22" y2="2"/></svg><span><b>Hang up first</b> — start each test with a fresh call</span></div>
+    <div class="down">↓</div>
+    <div class="n you"><div class="who">You say</div>“I'm a guest and I can't get into my room —
+      the keypad isn't doing anything”</div>
+    <div class="down">↓</div>
+    <div class="n ai"><div class="who">AI</div>Asks for your room number — it checks who you are
+      before helping with anything room-specific</div>
+    <div class="down">↓</div>
+    <div class="n you"><div class="who">You say</div>“Room 5”</div>
+    <div class="down">↓</div>
+    <div class="n ai"><div class="who">AI</div>Repeats it back, then asks which address — room 5
+      exists at four properties</div>
+    <div class="down">↓</div>
+    <div class="n you"><div class="who">You say</div>“Pułaskiego 6a”</div>
+    <div class="down">↓</div>
+    <div class="n ai"><div class="who">AI</div>Reads the address back to check it heard you right</div>
+    <div class="down">↓</div>
+    <div class="n you"><div class="who">You say</div>“Yes, that's right”</div>
+    <div class="down">↓</div>
+    <div class="n ai"><div class="who">AI</div><b>Talks you through it first</b> — press the keypad
+      to wake it, enter the room code from your check-in instructions, and check your email,
+      WhatsApp or Booking.com messages if you can't find them</div>
+    <div class="down">↓</div>
+    <div class="n you"><div class="who">You say</div>“I've tried all that, it still won't open”</div>
+    <div class="down">↓</div>
+    <div class="n ai"><div class="who">AI</div>Offers to raise a maintenance ticket</div>
+    <div class="down">↓</div>
+    <div class="n you"><div class="who">You say</div>“Yes please”</div>
+    <div class="down">↓</div>
+    <div class="pass">✓ A new ticket appears in the dashboard under Maintenance</div>
+  </div>
+</div>
+
+<div class="fc">
+  <div class="fc-h">Test 6 · Transfer to a human</div>
+  <div class="fc-b">
+    <div class="warn" style="margin-top:0;margin-bottom:14px">
+      <b>Heads up:</b> this test really will ring the number currently set in LiveKit
+      (+48 666 956 956). We're still waiting on your answer to question 2 above — whether
+      transfers should go there or to the published reception number.
+    </div>
+    <div class="start"><svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.4-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/><line x1="2" y1="22" x2="22" y2="2"/></svg><span><b>Hang up first</b> — start each test with a fresh call</span></div>
+    <div class="down">↓</div>
+    <div class="n you"><div class="who">You say</div>“Can I speak to a human please?”</div>
+    <div class="down">↓</div>
+    <div class="n ai"><div class="who">AI</div>Asks if it's OK to transfer you, and waits</div>
+    <div class="down">↓</div>
+    <div class="n you"><div class="who">You say</div>“Yes”</div>
+    <div class="down">↓</div>
+    <div class="pass">✓ Mon–Fri 8am–5pm → it dials +48 666 956 956<br>
+      ✓ Any other time → “Sorry, humans are only available Monday to Friday, from 8 AM to 5 PM…”</div>
+  </div>
+</div>
+
+<div class="fc">
+  <div class="fc-h">Test 7 · Polish</div>
+  <div class="fc-b">
+    <div class="start"><svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.4-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/><line x1="2" y1="22" x2="22" y2="2"/></svg><span><b>Hang up first</b> — start each test with a fresh call</span></div>
+    <div class="down">↓</div>
+    <div class="n you"><div class="who">You say</div>Start in English, then switch to Polish mid-call</div>
+    <div class="down">↓</div>
+    <div class="pass">✓ It answers in Polish, and the voice switches accent too</div>
+  </div>
+</div>
+
+<!-- ══════════ DASHBOARD ══════════ -->
+<h2>Dashboard login</h2>
+
+<div class="login">
+  <div class="lg-row"><div class="lg-k">Address</div><div class="lg-v">moloresidence.onrender.com</div></div>
+  <div class="lg-row"><div class="lg-k">Username</div><div class="lg-v">info@moloresidence.pl</div></div>
+  <div class="lg-row"><div class="lg-k">Password</div><div class="lg-v">Molo123?Agent</div></div>
+</div>
+
+<p class="small muted">This is where you edit the knowledge bases, see the call log, and manage
+maintenance tickets. Any knowledge base you edit takes effect on the very next call — nothing needs
+redeploying.</p>
+
+</div>
+</body>
+</html>

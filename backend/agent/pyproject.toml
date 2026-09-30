@@ -1,0 +1,40 @@
+[project]
+name = "molo-voice-agent"
+version = "0.1.0"
+description = "LiveKit voice agent for the Molo Residence hotel group (Sopot, Poland). Talks directly to the Molo Supabase database with the service-role key — no edge functions."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "python-dotenv>=1.0.1",
+    # Pinned to the exact set the working Convrse agent (website_livekit-main-3)
+    # runs. Floating >=1.4.4 drifted to 1.5.17 + google-genai 2.x, which broke
+    # the realtime generate_reply/generation_created handshake (agent went silent
+    # on calls). Keep these pinned until a newer set is verified end-to-end.
+    "livekit-agents==1.4.4",
+    "livekit-plugins-google==1.4.4",
+    "livekit-plugins-silero==1.4.4",
+    "livekit-plugins-turn-detector==1.4.4",
+    "livekit-plugins-noise-cancellation==0.2.5",
+    # ElevenLabs TTS via the plugin (direct API key), NOT LiveKit Inference: every
+    # ElevenLabs model on the Inference gateway retires 2026-08-31, and the voice
+    # we use is a community-library voice that Inference cannot resolve at all.
+    # Pinned to 1.4.4 to match livekit-agents above — see the pinning note there.
+    "livekit-plugins-elevenlabs==1.4.4",
+    "google-genai==1.65.0",
+    "supabase>=2.0",
+    "httpx>=0.27.0",
+    # Ships the IANA tz database so ZoneInfo("Europe/Warsaw") resolves inside the
+    # python:3.12-slim image (which has no system tzdata) — needed so the agent can
+    # reason about relative dates the caller uses ("tonight", "tomorrow").
+    "tzdata>=2024.1",
+    # Strict E.164 normalization for outbound SMS. Telnyx rejects anything else
+    # (error 40310), and SIP may deliver a caller number in national format with
+    # no country code — see _e164 in src/sms.py.
+    "phonenumbers>=8.13",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+]

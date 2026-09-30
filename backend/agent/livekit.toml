@@ -1,0 +1,25 @@
+# STALE — DO NOT DEPLOY WITH THIS FILE.
+#
+# `CA_9A3cUKL9gVwz` below no longer exists on the molo-residence project. The
+# agent actually answering the phone is CA_9DeKbNqCaYHQ (dispatch name
+# "molo-gemma"), configured in pipeline/livekit.toml.
+#
+# Deploying with this file — plus the root Dockerfile, which still launches the
+# retired src/agent.py — builds the wrong agent against a dead id. See
+# pipeline/README.md for the correct procedure.
+#
+# Do NOT "fix" this by putting CA_9DeKbNqCaYHQ here: paired with the root
+# Dockerfile that would deploy the retired speech-to-speech agent straight onto
+# the live phone line. The dead id is the safer failure.
+#
+# NOTE: the deploy procedure ends in `git checkout Dockerfile livekit.toml`,
+# which reverts this file to its committed state. If this banner is missing, it
+# is because the warning was never committed — re-add it.
+#
+# Kept only so the historical s2s deployment config isn't lost; agent.py itself
+# is still imported by the pipeline and must not be edited.
+[project]
+  subdomain = "molo-residence-lx6og0ck"
+
+[agent]
+  id = "CA_9A3cUKL9gVwz"

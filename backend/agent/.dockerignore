@@ -1,0 +1,8 @@
+.venv/
+.env
+.env.*
+__pycache__/
+*.pyc
+google_credentials.json
+docs/
+*.md

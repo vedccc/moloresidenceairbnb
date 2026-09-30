@@ -1,0 +1,12 @@
+{
+  "imports": {
+    "hono": "jsr:@hono/hono@^4.6.0",
+    "hono/cors": "jsr:@hono/hono@^4.6.0/cors",
+    "jose": "npm:jose@^5.9.0",
+    "bcryptjs": "npm:bcryptjs@^2.4.3",
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@^2.45.0"
+  },
+  "tasks": {
+    "test": "deno test --allow-env --allow-net"
+  }
+}

@@ -1,0 +1,19 @@
+# OS cruft
+.DS_Store
+
+# Secrets. The monorepo restructure moved package.json into frontend/ and left a
+# stale .env.local at the repo root that NO rule covered — `git add -A` staged it
+# (caught 2026-08-15, never committed). frontend/ and backend/agent/ have their
+# own .gitignore, but the root had none, so keep these here.
+.env
+.env.*
+!.env.example
+
+# Local tooling config — .mcp.json holds a live Render API token, never commit it
+.mcp.json
+.claude/settings.local.json
+
+# The original pre-monorepo agent checkout, kept locally as a backup.
+# It carries its own .git with the full 46-commit history. Safe to delete once
+# this repo is confirmed pushed.
+/molo-voice-agent/

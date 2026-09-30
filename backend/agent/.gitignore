@@ -1,0 +1,15 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Secrets — never commit
+.env
+
+# Call recordings / observability bundles (audio + transcripts, may contain PII)
+observability-*/
+
+# Local logs / OS cruft
+KMS/logs/
+.DS_Store
